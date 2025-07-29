@@ -209,17 +209,27 @@ export class MathEngine {
       };
 
       const numberToFraction = (num: number): string => {
-        if (num === 0.5) return '½';
+        if (Math.abs(num - 0.5) < 0.001) return '½';
         if (Math.abs(num - 1/3) < 0.001) return '⅓';
         if (Math.abs(num - 2/3) < 0.001) return '⅔';
-        if (num === 0.25) return '¼';
-        if (num === 0.75) return '¾';
+        if (Math.abs(num - 0.25) < 0.001) return '¼';
+        if (Math.abs(num - 0.75) < 0.001) return '¾';
         if (Math.abs(num - 1/6) < 0.001) return '⅙';
         if (Math.abs(num - 5/6) < 0.001) return '⅚';
-        if (num % 1 === 0) return num.toString();
+        if (Math.abs(num - 0.125) < 0.001) return '⅛';
+        if (Math.abs(num - 0.375) < 0.001) return '⅜';
+        if (Math.abs(num - 0.625) < 0.001) return '⅝';
+        if (Math.abs(num - 0.875) < 0.001) return '⅞';
+        if (Math.abs(num % 1) < 0.001) return Math.round(num).toString();
         return num.toString();
       };
       
+      // Handle complex nested patterns: "2 × ((½x + ⅓) ÷ 2)" → "½x + ⅓"
+      calculated = calculated.replace(/(\d+(?:\.\d+)?) × \(\(([^)]+)\) ÷ \1\)/g, (match, multiplier, inner) => {
+        console.log(`Simplifying multiplication/division: ${match} → (${inner})`);
+        return `(${inner})`;
+      });
+
       // Handle multiplication: "2 × (½x + ⅓)" → "x + ⅔"
       calculated = calculated.replace(/(\d+(?:\.\d+)?) × \(\(([^)]+)\)\)/g, (match, multiplier, inner) => {
         const mult = parseFloat(multiplier);
@@ -345,6 +355,49 @@ export class MathEngine {
         }
         
         console.log(`Result of division: ${result}`);
+        return result;
+      });
+
+      // Handle malformed division patterns like "x + ⅔ ÷ 2"
+      calculated = calculated.replace(/([^()]+) ÷ (\d+(?:\.\d+)?)/g, (match, expr, divisor) => {
+        const div = parseFloat(divisor);
+        console.log(`Fixing malformed division: ${match}`);
+        
+        // Split by + and - while preserving signs
+        const terms = expr.split(/(\s*[\+\-]\s*)/).filter(term => term.trim() !== '');
+        let result = '';
+        
+        for (let i = 0; i < terms.length; i++) {
+          const term = terms[i].trim();
+          
+          if (term === '+' || term === '-') {
+            result += ` ${term} `;
+            continue;
+          }
+          
+          // Handle x terms
+          if (term.includes('x')) {
+            const coeffMatch = term.match(/(½|⅓|¼|⅔|¾|⅕|⅖|⅗|⅘|⅙|⅚|⅛|⅜|⅝|⅞|\d*\.?\d+)?x/);
+            if (coeffMatch) {
+              const coef = coeffMatch[1] || '1';
+              const coefficient = coef === '1' ? 1 : fractionToNumber(coef);
+              const newCoef = coefficient / div;
+              
+              if (newCoef === 1) {
+                result += 'x';
+              } else {
+                result += `${numberToFraction(newCoef)}x`;
+              }
+            }
+          } else {
+            // Handle constant terms
+            const constValue = fractionToNumber(term);
+            const newValue = constValue / div;
+            result += numberToFraction(newValue);
+          }
+        }
+        
+        console.log(`Fixed division result: ${result}`);
         return result;
       });
       
