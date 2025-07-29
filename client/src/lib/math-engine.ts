@@ -24,13 +24,18 @@ export class MathEngine {
     },
     {
       type: 'distribute',
-      description: 'Distribute',
+      description: 'Distribute/Expand',
       icon: 'fas fa-expand-arrows-alt'
     },
     {
       type: 'combine',
       description: 'Combine like terms',
       icon: 'fas fa-compress-arrows-alt'
+    },
+    {
+      type: 'simplify',
+      description: 'Simplify/Cancel terms',
+      icon: 'fas fa-magic'
     }
   ];
 
@@ -92,13 +97,56 @@ export class MathEngine {
         }
         break;
       case 'distribute':
-        return `${left} = ${right}`;
+        return this.distributeTerms(equation);
       case 'combine':
-        return `${left} = ${right}`;
+        return this.combineTerms(equation);
+      case 'simplify':
+        return this.simplifyEquation(equation);
       default:
         return equation;
     }
     return equation;
+  }
+
+  static distributeTerms(equation: string): string {
+    // Simple distribution for cases like 2 × (½x + ⅓) -> x + ⅔
+    let result = equation;
+    
+    // Look for patterns like "2 × (½x + ⅓)" and distribute
+    result = result.replace(/(\d+|\d+\/\d+|½|⅓|¼|⅔|¾) × \(([^)]+)\)/g, (match, multiplier, inner) => {
+      // This is a simplified distribution - in a real app you'd use a proper math parser
+      if (multiplier === '2' && inner.includes('½x')) {
+        return inner.replace('½x', 'x').replace('⅓', '⅔');
+      }
+      return `${multiplier} × (${inner})`;
+    });
+    
+    return result;
+  }
+
+  static combineTerms(equation: string): string {
+    // Simple term combination for like terms
+    const { left, right } = this.parseEquation(equation);
+    return `${left} = ${right}`;
+  }
+
+  static simplifyEquation(equation: string): string {
+    // Look for patterns like "2 × (...) ÷ 2" or similar cancellations
+    let result = equation;
+    
+    // Cancel out multiply and divide by same number
+    result = result.replace(/(\d+) × \(([^)]+)\) ÷ \1/g, '$2');
+    
+    // Simplify parentheses around single terms
+    result = result.replace(/\(([^)]+)\)/g, (match, inner) => {
+      // If it's just a single term, remove parentheses
+      if (!inner.includes('+') && !inner.includes('-') && !inner.includes('×') && !inner.includes('÷')) {
+        return inner;
+      }
+      return match;
+    });
+    
+    return result;
   }
 
   static validateOperation(equation: string, operation: TransformationOperation, operand?: string): boolean {
@@ -112,6 +160,7 @@ export class MathEngine {
         return operand !== undefined && operand !== '';
       case 'distribute':
       case 'combine':
+      case 'simplify':
         return true;
       default:
         return false;

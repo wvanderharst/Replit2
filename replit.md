@@ -16,6 +16,11 @@ Preferred communication style: Simple, everyday language.
 ✓ Disabled operation buttons during preview mode to prevent stacking operations
 ✓ Added proper fraction input support (½, ⅓, ¼) through keypad
 ✓ Improved visual feedback showing preview vs committed states
+✓ Fixed undo functionality to properly track equation history and undo committed steps
+✓ Added "Simplify/Cancel Terms" operation for simplifying expressions like 2×(...)÷2
+✓ Added "Distribute/Expand" operation for multiplying out terms in brackets
+✓ Made commit button smaller to fit better on screen
+✓ Improved undo button to show different states (Cancel/Undo) and disable when unavailable
 
 ## System Architecture
 

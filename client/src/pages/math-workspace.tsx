@@ -20,6 +20,7 @@ export default function MathWorkspace() {
   const [currentStep, setCurrentStep] = useState(1);
   const [previewMode, setPreviewMode] = useState(false);
   const [mobileView, setMobileView] = useState('workspace');
+  const [equationHistory, setEquationHistory] = useState<string[]>(["½x + ⅓ = ¼x - ⅙"]);
   const isMobile = useIsMobile();
 
   // Fetch initial problem
@@ -77,14 +78,11 @@ export default function MathWorkspace() {
   const hints: MathHint[] = currentProblem?.hints || [];
 
   const handleOperationSelect = (operation: string, operand?: string) => {
-    console.log('Operation selected:', operation, 'operand:', operand);
     const mathOperation = MathEngine.OPERATIONS.find(op => op.type === operation);
     if (!mathOperation) return;
 
     const preview = MathEngine.generatePreview(equationState.current, mathOperation, operand);
     const isValid = MathEngine.validateOperation(equationState.current, mathOperation, operand);
-    
-    console.log('Preview generated:', preview, 'isValid:', isValid);
 
     setEquationState(prev => ({
       ...prev,
@@ -92,14 +90,18 @@ export default function MathWorkspace() {
       isValid
     }));
     setPreviewMode(true);
-    console.log('Preview mode set to true');
   };
 
   const handleApplyTransformation = () => {
     if (equationState.preview && equationState.isValid) {
+      const newEquation = equationState.preview;
+      
+      // Add current equation to history before changing it
+      setEquationHistory(prev => [...prev, newEquation]);
+      
       setEquationState(prev => ({
         ...prev,
-        current: prev.preview || prev.current,
+        current: newEquation,
         preview: undefined
       }));
       setCurrentStep(prev => prev + 1);
@@ -116,7 +118,7 @@ export default function MathWorkspace() {
               {
                 stepNumber: currentStep,
                 operation: 'transformation',
-                equation: equationState.preview,
+                equation: newEquation,
                 isValid: true,
                 timestamp: new Date().toISOString()
               }
@@ -129,15 +131,25 @@ export default function MathWorkspace() {
 
   const handleUndoStep = () => {
     if (previewMode) {
+      // Cancel preview mode
       setEquationState(prev => ({
         ...prev,
         preview: undefined,
         isValid: true
       }));
       setPreviewMode(false);
-    } else if (currentStep > 1) {
-      // In a real implementation, we'd track the equation history
-      setCurrentStep(prev => prev - 1);
+    } else if (equationHistory.length > 1) {
+      // Undo last committed step
+      const newHistory = equationHistory.slice(0, -1);
+      const previousEquation = newHistory[newHistory.length - 1];
+      
+      setEquationHistory(newHistory);
+      setEquationState(prev => ({
+        ...prev,
+        current: previousEquation,
+        preview: undefined
+      }));
+      setCurrentStep(prev => Math.max(1, prev - 1));
     }
   };
 
@@ -213,6 +225,7 @@ export default function MathWorkspace() {
               onApplyTransformation={handleApplyTransformation}
               onUndoStep={handleUndoStep}
               currentStep={currentStep}
+              canUndo={equationHistory.length > 1}
             />
             
             <div className={`mt-6 ${isMobile && mobileView !== 'balance' ? 'hidden lg:block' : ''}`}>

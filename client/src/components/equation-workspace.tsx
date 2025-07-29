@@ -10,6 +10,7 @@ interface EquationWorkspaceProps {
   onApplyTransformation: () => void;
   onUndoStep: () => void;
   currentStep: number;
+  canUndo?: boolean;
 }
 
 export default function EquationWorkspace({
@@ -18,7 +19,8 @@ export default function EquationWorkspace({
   onOperationSelect,
   onApplyTransformation,
   onUndoStep,
-  currentStep
+  currentStep,
+  canUndo = false
 }: EquationWorkspaceProps) {
   
   return (
@@ -39,9 +41,10 @@ export default function EquationWorkspace({
               variant="outline"
               size="sm"
               onClick={onUndoStep}
+              disabled={!canUndo && !previewMode}
             >
               <i className="fas fa-history text-sm mr-2"></i>
-              Undo
+              {previewMode ? 'Cancel' : 'Undo'}
             </Button>
           </div>
         </div>
@@ -95,49 +98,44 @@ export default function EquationWorkspace({
           </div>
           
           {/* Preview Area - This shows when student selects an operation */}
-          {(() => {
-            console.log('Rendering check - previewMode:', previewMode, 'preview:', equationState.preview);
-            return previewMode && equationState.preview;
-          })() && (
-            <div className="bg-orange-50 rounded-lg p-6 border-2 border-orange-200 shadow-lg">
-              <h3 className="text-lg font-bold text-orange-800 mb-3 text-center">
+          {previewMode && equationState.preview && (
+            <div className="bg-orange-50 rounded-lg p-4 border-2 border-orange-200 shadow-lg">
+              <h3 className="text-base font-bold text-orange-800 mb-3 text-center">
                 🔍 PREVIEW: What will happen after this transformation
               </h3>
               
-              <div className="bg-white rounded-lg p-4 border border-orange-300 mb-4">
-                <div className="text-2xl math-equation text-gray-900 text-center font-bold">
+              <div className="bg-white rounded-lg p-3 border border-orange-300 mb-3">
+                <div className="text-lg math-equation text-gray-900 text-center font-bold">
                   {equationState.preview}
                 </div>
               </div>
               
-              <div className="flex items-center justify-center mb-4">
+              <div className="flex items-center justify-center mb-3">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-4 h-4 rounded-full ${
+                  <div className={`w-3 h-3 rounded-full ${
                     equationState.isValid ? 'bg-green-500' : 'bg-red-500'
                   }`}></div>
-                  <span className={`text-sm font-bold ${
+                  <span className={`text-xs font-medium ${
                     equationState.isValid ? 'text-green-700' : 'text-red-700'
                   }`}>
-                    {equationState.isValid ? '✓ This transformation keeps the equation balanced' : '✗ This would unbalance the equation'}
+                    {equationState.isValid ? '✓ This transformation is valid' : '✗ This would unbalance the equation'}
                   </span>
                 </div>
               </div>
               
-              <div className="flex items-center justify-center space-x-4">
+              <div className="flex items-center justify-center space-x-3">
                 <Button
                   variant="outline"
                   onClick={onUndoStep}
-                  className="border-gray-400 hover:bg-gray-100 px-6 py-3"
-                  size="lg"
+                  className="border-gray-400 hover:bg-gray-100 px-4 py-2"
                 >
                   <i className="fas fa-times text-sm mr-2"></i>
                   Cancel
                 </Button>
                 <Button
                   onClick={onApplyTransformation}
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg font-bold shadow-lg"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 font-bold"
                   disabled={!equationState.isValid}
-                  size="lg"
                 >
                   <i className="fas fa-check text-sm mr-2"></i>
                   COMMIT THIS STEP
