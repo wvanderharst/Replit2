@@ -221,6 +221,48 @@ export class MathEngine {
       };
       
       // Handle multiplication: "2 × (½x + ⅓)" → "x + ⅔"
+      calculated = calculated.replace(/(\d+(?:\.\d+)?) × \(\(([^)]+)\)\)/g, (match, multiplier, inner) => {
+        const mult = parseFloat(multiplier);
+        console.log(`Distributing ${mult} × ((${inner}))`);
+        
+        // Split by + and - while preserving signs
+        const terms = inner.split(/(\s*[\+\-]\s*)/).filter(term => term.trim() !== '');
+        let result = '';
+        
+        for (let i = 0; i < terms.length; i++) {
+          const term = terms[i].trim();
+          
+          if (term === '+' || term === '-') {
+            result += ` ${term} `;
+            continue;
+          }
+          
+          // Handle x terms like "½x" or "x"
+          if (term.includes('x')) {
+            const coeffMatch = term.match(/(½|⅓|¼|⅔|¾|⅕|⅖|⅗|⅘|⅙|⅚|⅛|⅜|⅝|⅞|\d*\.?\d+)?x/);
+            if (coeffMatch) {
+              const coef = coeffMatch[1] || '1';
+              const coefficient = coef === '1' ? 1 : fractionToNumber(coef);
+              const newCoef = coefficient * mult;
+              
+              if (newCoef === 1) {
+                result += 'x';
+              } else {
+                result += `${numberToFraction(newCoef)}x`;
+              }
+            }
+          } else {
+            // Handle constant terms
+            const constValue = fractionToNumber(term);
+            const newValue = constValue * mult;
+            result += numberToFraction(newValue);
+          }
+        }
+        
+        console.log(`Result of distribution: ${result}`);
+        return result;
+      });
+
       calculated = calculated.replace(/(\d+(?:\.\d+)?) × \(([^)]+)\)/g, (match, multiplier, inner) => {
         const mult = parseFloat(multiplier);
         console.log(`Distributing ${mult} × (${inner})`);
@@ -306,8 +348,17 @@ export class MathEngine {
         return result;
       });
       
-      // Remove unnecessary parentheses around single terms
-      calculated = calculated.replace(/\(([^+\-×÷()]+)\)/g, '$1');
+      // Clean up multiple parentheses levels and remove unnecessary ones
+      let previousLength;
+      do {
+        previousLength = calculated.length;
+        // Remove double parentheses: "((x))" → "(x)"
+        calculated = calculated.replace(/\(\(([^)]+)\)\)/g, '($1)');
+        // Remove unnecessary parentheses around single terms
+        calculated = calculated.replace(/\(([^+\-×÷()]+)\)/g, '$1');
+        // Fix any stray closing parentheses
+        calculated = calculated.replace(/([^(])\)/g, '$1');
+      } while (calculated.length !== previousLength);
       
       console.log('Expression calculated to:', calculated);
       return calculated;

@@ -205,7 +205,7 @@ export default function MathWorkspace() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Step Tracker */}
           <div className={`lg:col-span-1 ${isMobile && mobileView !== 'steps' ? 'hidden' : ''}`}>

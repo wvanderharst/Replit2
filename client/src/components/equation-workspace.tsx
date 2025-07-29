@@ -154,7 +154,7 @@ export default function EquationWorkspace({
           )}
         </div>
         
-        <div className={`mt-8 ${previewMode ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`mt-8 mb-6 ${previewMode ? 'opacity-50 pointer-events-none' : ''}`}>
           <OperationButtons onOperationSelect={onOperationSelect} />
           {previewMode && (
             <div className="text-center mt-4">
