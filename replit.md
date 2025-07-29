@@ -8,6 +8,15 @@ This is a modern web application designed for interactive math learning, specifi
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (July 29, 2025)
+
+✓ Added calculator-style keypad for mathematical input instead of manual typing
+✓ Implemented dedicated "Commit This Step" button for intentional step progression
+✓ Enhanced preview mode with clear visual indicators and commit/cancel workflow
+✓ Disabled operation buttons during preview mode to prevent stacking operations
+✓ Added proper fraction input support (½, ⅓, ¼) through keypad
+✓ Improved visual feedback showing preview vs committed states
+
 ## System Architecture
 
 ### Frontend Architecture
