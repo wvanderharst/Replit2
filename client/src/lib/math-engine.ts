@@ -159,6 +159,9 @@ export class MathEngine {
       // "2 × ((6 × (½x + ⅓)) ÷ 6)" → "2 × (½x + ⅓)"
       simplified = simplified.replace(/(\d+) × \(\((\d+) × \(([^)]+)\)\) ÷ \2\)/g, '$1 × ($3)');
       
+      // Pattern 4: Handle operations after subtraction like "- 0.5x"
+      simplified = simplified.replace(/\s*-\s*(\d+(?:\.\d+)?)x/g, ' - $1x');
+      
       // Pattern 4: Handle cases where outer parentheses wrap the whole multiply/divide
       // "(6 × (½x + ⅓)) ÷ 6" → "(½x + ⅓)"
       simplified = simplified.replace(/\((\d+) × \(([^)]+)\)\) ÷ \1/g, '($2)');
@@ -204,45 +207,103 @@ export class MathEngine {
         };
         return fractionMap[frac] || parseFloat(frac);
       };
+
+      const numberToFraction = (num: number): string => {
+        if (num === 0.5) return '½';
+        if (Math.abs(num - 1/3) < 0.001) return '⅓';
+        if (Math.abs(num - 2/3) < 0.001) return '⅔';
+        if (num === 0.25) return '¼';
+        if (num === 0.75) return '¾';
+        if (Math.abs(num - 1/6) < 0.001) return '⅙';
+        if (Math.abs(num - 5/6) < 0.001) return '⅚';
+        if (num % 1 === 0) return num.toString();
+        return num.toString();
+      };
       
       // Handle multiplication: "2 × (½x + ⅓)" → "x + ⅔"
-      calculated = calculated.replace(/(\d+) × \(([^)]+)\)/g, (match, multiplier, inner) => {
+      calculated = calculated.replace(/(\d+(?:\.\d+)?) × \(([^)]+)\)/g, (match, multiplier, inner) => {
         const mult = parseFloat(multiplier);
-        // Simple case: distribute multiplication over addition/subtraction
-        if (inner.includes('x')) {
-          // Handle "½x + ⅓" pattern
-          let result = inner.replace(/(½|⅓|¼|⅔|¾|⅕|⅖|⅗|⅘|⅙|⅚|⅛|⅜|⅝|⅞|\d*\.?\d*)x/g, (xMatch, coef) => {
-            const coefficient = coef === '' ? 1 : fractionToNumber(coef);
-            const newCoef = coefficient * mult;
-            
-            // Convert back to fraction if possible
-            if (newCoef === 1) return 'x';
-            if (newCoef === 0.5) return '½x';
-            if (newCoef === 1/3) return '⅓x';
-            if (newCoef === 2/3) return '⅔x';
-            if (newCoef === 0.25) return '¼x';
-            if (newCoef === 0.75) return '¾x';
-            return `${newCoef}x`;
-          });
+        console.log(`Distributing ${mult} × (${inner})`);
+        
+        // Split by + and - while preserving signs
+        const terms = inner.split(/(\s*[\+\-]\s*)/).filter(term => term.trim() !== '');
+        let result = '';
+        
+        for (let i = 0; i < terms.length; i++) {
+          const term = terms[i].trim();
           
-          // Handle constant terms
-          result = result.replace(/(½|⅓|¼|⅔|¾|⅕|⅖|⅗|⅘|⅙|⅚|⅛|⅜|⅝|⅞|\d*\.?\d+)(?!x)/g, (constMatch, constant) => {
-            const constValue = fractionToNumber(constant);
+          if (term === '+' || term === '-') {
+            result += ` ${term} `;
+            continue;
+          }
+          
+          // Handle x terms like "½x" or "x"
+          if (term.includes('x')) {
+            const coeffMatch = term.match(/(½|⅓|¼|⅔|¾|⅕|⅖|⅗|⅘|⅙|⅚|⅛|⅜|⅝|⅞|\d*\.?\d+)?x/);
+            if (coeffMatch) {
+              const coef = coeffMatch[1] || '1';
+              const coefficient = coef === '1' ? 1 : fractionToNumber(coef);
+              const newCoef = coefficient * mult;
+              
+              if (newCoef === 1) {
+                result += 'x';
+              } else {
+                result += `${numberToFraction(newCoef)}x`;
+              }
+            }
+          } else {
+            // Handle constant terms
+            const constValue = fractionToNumber(term);
             const newValue = constValue * mult;
-            
-            // Convert back to fraction if possible
-            if (newValue === 0.5) return '½';
-            if (newValue === 1/3) return '⅓';
-            if (newValue === 2/3) return '⅔';
-            if (newValue === 0.25) return '¼';
-            if (newValue === 0.75) return '¾';
-            if (newValue % 1 === 0) return newValue.toString();
-            return newValue.toString();
-          });
-          
-          return result;
+            result += numberToFraction(newValue);
+          }
         }
-        return match;
+        
+        console.log(`Result of distribution: ${result}`);
+        return result;
+      });
+
+      // Handle division: "(x + ⅔) ÷ 2" → "½x + ⅓"
+      calculated = calculated.replace(/\(([^)]+)\) ÷ (\d+(?:\.\d+)?)/g, (match, inner, divisor) => {
+        const div = parseFloat(divisor);
+        console.log(`Distributing (${inner}) ÷ ${div}`);
+        
+        // Split by + and - while preserving signs
+        const terms = inner.split(/(\s*[\+\-]\s*)/).filter(term => term.trim() !== '');
+        let result = '';
+        
+        for (let i = 0; i < terms.length; i++) {
+          const term = terms[i].trim();
+          
+          if (term === '+' || term === '-') {
+            result += ` ${term} `;
+            continue;
+          }
+          
+          // Handle x terms
+          if (term.includes('x')) {
+            const coeffMatch = term.match(/(½|⅓|¼|⅔|¾|⅕|⅖|⅗|⅘|⅙|⅚|⅛|⅜|⅝|⅞|\d*\.?\d+)?x/);
+            if (coeffMatch) {
+              const coef = coeffMatch[1] || '1';
+              const coefficient = coef === '1' ? 1 : fractionToNumber(coef);
+              const newCoef = coefficient / div;
+              
+              if (newCoef === 1) {
+                result += 'x';
+              } else {
+                result += `${numberToFraction(newCoef)}x`;
+              }
+            }
+          } else {
+            // Handle constant terms
+            const constValue = fractionToNumber(term);
+            const newValue = constValue / div;
+            result += numberToFraction(newValue);
+          }
+        }
+        
+        console.log(`Result of division: ${result}`);
+        return result;
       });
       
       // Remove unnecessary parentheses around single terms
