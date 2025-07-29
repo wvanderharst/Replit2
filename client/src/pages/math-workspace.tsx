@@ -28,7 +28,7 @@ export default function MathWorkspace() {
     queryKey: ['/api/problems/linear_equations'],
   });
 
-  const currentProblem = problems?.[0];
+  const currentProblem = problems?.[0] || null;
 
   // Create session mutation
   const createSessionMutation = useMutation({

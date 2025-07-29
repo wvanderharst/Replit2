@@ -131,20 +131,50 @@ export class MathEngine {
   }
 
   static simplifyEquation(equation: string): string {
-    // Look for patterns like "2 × (...) ÷ 2" or similar cancellations
-    let result = equation;
+    console.log('Simplifying equation:', equation);
+    const originalResult = equation;
     
-    // Cancel out multiply and divide by same number
-    result = result.replace(/(\d+) × \(([^)]+)\) ÷ \1/g, '$2');
+    // First, handle both sides of the equation separately
+    const { left, right } = this.parseEquation(equation);
     
-    // Simplify parentheses around single terms
-    result = result.replace(/\(([^)]+)\)/g, (match, inner) => {
-      // If it's just a single term, remove parentheses
-      if (!inner.includes('+') && !inner.includes('-') && !inner.includes('×') && !inner.includes('÷')) {
-        return inner;
-      }
-      return match;
-    });
+    const simplifyExpression = (expr: string): string => {
+      let simplified = expr.trim();
+      console.log('Simplifying expression:', simplified);
+      
+      // Handle various cancellation patterns
+      // Pattern 1: "2 × (...) ÷ 2" → "(...)"
+      simplified = simplified.replace(/(\d+) × \(([^)]+)\) ÷ \1/g, '($2)');
+      
+      // Pattern 2: "6 × (½x + ⅓) ÷ 6" → "(½x + ⅓)"
+      simplified = simplified.replace(/(\d+) × \(([^)]+)\) ÷ \1/g, '($2)');
+      
+      // Pattern 3: More complex nested operations
+      // "2 × ((6 × (½x + ⅓)) ÷ 6)" → "2 × (½x + ⅓)"
+      simplified = simplified.replace(/(\d+) × \(\((\d+) × \(([^)]+)\)\) ÷ \2\)/g, '$1 × ($3)');
+      
+      // Pattern 4: Direct simplification "6 × (...) ÷ 6" → "(...)" 
+      simplified = simplified.replace(/(\d+) × \(([^)]+)\) ÷ \1/g, '($2)');
+      
+      // Clean up multiple levels of parentheses
+      let previousLength;
+      do {
+        previousLength = simplified.length;
+        // Remove double parentheses: "((x))" → "(x)"
+        simplified = simplified.replace(/\(\(([^)]+)\)\)/g, '($1)');
+        // Remove unnecessary single parentheses around simple terms
+        simplified = simplified.replace(/\(([^+\-×÷()]+)\)/g, '$1');
+      } while (simplified.length !== previousLength);
+      
+      console.log('Expression simplified to:', simplified);
+      return simplified;
+    };
+    
+    const simplifiedLeft = simplifyExpression(left);
+    const simplifiedRight = simplifyExpression(right);
+    
+    const result = `${simplifiedLeft} = ${simplifiedRight}`;
+    
+    console.log('Final simplified equation:', originalResult, '→', result);
     
     return result;
   }
