@@ -21,6 +21,9 @@ Preferred communication style: Simple, everyday language.
 ✓ Added "Distribute/Expand" operation for multiplying out terms in brackets
 ✓ Made commit button smaller to fit better on screen
 ✓ Improved undo button to show different states (Cancel/Undo) and disable when unavailable
+✓ Enhanced simplify function to handle both multiply-first and divide-first patterns
+✓ Added "Calculate/Expand all" button that performs actual mathematical calculations to eliminate parentheses
+✓ Improved pattern matching for complex nested expressions like "2 × ((6 × (...)) ÷ 6)"
 
 ## System Architecture
 

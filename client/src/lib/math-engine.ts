@@ -36,6 +36,11 @@ export class MathEngine {
       type: 'simplify',
       description: 'Simplify/Cancel terms',
       icon: 'fas fa-magic'
+    },
+    {
+      type: 'calculate',
+      description: 'Calculate/Expand all',
+      icon: 'fas fa-calculator'
     }
   ];
 
@@ -102,6 +107,8 @@ export class MathEngine {
         return this.combineTerms(equation);
       case 'simplify':
         return this.simplifyEquation(equation);
+      case 'calculate':
+        return this.calculateEquation(equation);
       default:
         return equation;
     }
@@ -142,18 +149,19 @@ export class MathEngine {
       console.log('Simplifying expression:', simplified);
       
       // Handle various cancellation patterns
-      // Pattern 1: "2 × (...) ÷ 2" → "(...)"
-      simplified = simplified.replace(/(\d+) × \(([^)]+)\) ÷ \1/g, '($2)');
+      // Pattern 1: "(2 × (...)) ÷ 2" → "(...)" - handles parentheses around multiplication
+      simplified = simplified.replace(/\((\d+) × \(([^)]+)\)\) ÷ \1/g, '($2)');
       
-      // Pattern 2: "6 × (½x + ⅓) ÷ 6" → "(½x + ⅓)"
+      // Pattern 2: "2 × (...) ÷ 2" → "(...)" - direct multiplication/division cancellation
       simplified = simplified.replace(/(\d+) × \(([^)]+)\) ÷ \1/g, '($2)');
       
       // Pattern 3: More complex nested operations
       // "2 × ((6 × (½x + ⅓)) ÷ 6)" → "2 × (½x + ⅓)"
       simplified = simplified.replace(/(\d+) × \(\((\d+) × \(([^)]+)\)\) ÷ \2\)/g, '$1 × ($3)');
       
-      // Pattern 4: Direct simplification "6 × (...) ÷ 6" → "(...)" 
-      simplified = simplified.replace(/(\d+) × \(([^)]+)\) ÷ \1/g, '($2)');
+      // Pattern 4: Handle cases where outer parentheses wrap the whole multiply/divide
+      // "(6 × (½x + ⅓)) ÷ 6" → "(½x + ⅓)"
+      simplified = simplified.replace(/\((\d+) × \(([^)]+)\)\) ÷ \1/g, '($2)');
       
       // Clean up multiple levels of parentheses
       let previousLength;
@@ -179,6 +187,80 @@ export class MathEngine {
     return result;
   }
 
+  static calculateEquation(equation: string): string {
+    console.log('Calculating equation:', equation);
+    const { left, right } = this.parseEquation(equation);
+    
+    const calculateExpression = (expr: string): string => {
+      let calculated = expr.trim();
+      console.log('Calculating expression:', calculated);
+      
+      // Convert fractions to decimals for calculation
+      const fractionToNumber = (frac: string): number => {
+        const fractionMap: { [key: string]: number } = {
+          '½': 0.5, '⅓': 1/3, '⅔': 2/3, '¼': 0.25, '¾': 0.75,
+          '⅕': 0.2, '⅖': 0.4, '⅗': 0.6, '⅘': 0.8, '⅙': 1/6, '⅚': 5/6,
+          '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875
+        };
+        return fractionMap[frac] || parseFloat(frac);
+      };
+      
+      // Handle multiplication: "2 × (½x + ⅓)" → "x + ⅔"
+      calculated = calculated.replace(/(\d+) × \(([^)]+)\)/g, (match, multiplier, inner) => {
+        const mult = parseFloat(multiplier);
+        // Simple case: distribute multiplication over addition/subtraction
+        if (inner.includes('x')) {
+          // Handle "½x + ⅓" pattern
+          let result = inner.replace(/(½|⅓|¼|⅔|¾|⅕|⅖|⅗|⅘|⅙|⅚|⅛|⅜|⅝|⅞|\d*\.?\d*)x/g, (xMatch, coef) => {
+            const coefficient = coef === '' ? 1 : fractionToNumber(coef);
+            const newCoef = coefficient * mult;
+            
+            // Convert back to fraction if possible
+            if (newCoef === 1) return 'x';
+            if (newCoef === 0.5) return '½x';
+            if (newCoef === 1/3) return '⅓x';
+            if (newCoef === 2/3) return '⅔x';
+            if (newCoef === 0.25) return '¼x';
+            if (newCoef === 0.75) return '¾x';
+            return `${newCoef}x`;
+          });
+          
+          // Handle constant terms
+          result = result.replace(/(½|⅓|¼|⅔|¾|⅕|⅖|⅗|⅘|⅙|⅚|⅛|⅜|⅝|⅞|\d*\.?\d+)(?!x)/g, (constMatch, constant) => {
+            const constValue = fractionToNumber(constant);
+            const newValue = constValue * mult;
+            
+            // Convert back to fraction if possible
+            if (newValue === 0.5) return '½';
+            if (newValue === 1/3) return '⅓';
+            if (newValue === 2/3) return '⅔';
+            if (newValue === 0.25) return '¼';
+            if (newValue === 0.75) return '¾';
+            if (newValue % 1 === 0) return newValue.toString();
+            return newValue.toString();
+          });
+          
+          return result;
+        }
+        return match;
+      });
+      
+      // Remove unnecessary parentheses around single terms
+      calculated = calculated.replace(/\(([^+\-×÷()]+)\)/g, '$1');
+      
+      console.log('Expression calculated to:', calculated);
+      return calculated;
+    };
+    
+    const calculatedLeft = calculateExpression(left);
+    const calculatedRight = calculateExpression(right);
+    
+    const result = `${calculatedLeft} = ${calculatedRight}`;
+    console.log('Final calculated equation:', equation, '→', result);
+    
+    return result;
+  }
+
   static validateOperation(equation: string, operation: TransformationOperation, operand?: string): boolean {
     // Basic validation - ensures operation is applicable
     switch (operation.type) {
@@ -191,6 +273,7 @@ export class MathEngine {
       case 'distribute':
       case 'combine':
       case 'simplify':
+      case 'calculate':
         return true;
       default:
         return false;
