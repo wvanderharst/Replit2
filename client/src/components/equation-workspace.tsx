@@ -94,50 +94,61 @@ export default function EquationWorkspace({
             )}
           </div>
           
-          {/* Preview Area */}
-          {previewMode && equationState.preview && (
-            <div className="bg-warning/5 rounded-lg p-4 border-l-4 border-warning border-dashed">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm text-warning font-medium">Preview: After transformation</p>
+          {/* Preview Area - This shows when student selects an operation */}
+          {(() => {
+            console.log('Rendering check - previewMode:', previewMode, 'preview:', equationState.preview);
+            return previewMode && equationState.preview;
+          })() && (
+            <div className="bg-orange-50 rounded-lg p-6 border-2 border-orange-200 shadow-lg">
+              <h3 className="text-lg font-bold text-orange-800 mb-3 text-center">
+                🔍 PREVIEW: What will happen after this transformation
+              </h3>
+              
+              <div className="bg-white rounded-lg p-4 border border-orange-300 mb-4">
+                <div className="text-2xl math-equation text-gray-900 text-center font-bold">
+                  {equationState.preview}
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-center mb-4">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${
-                    equationState.isValid ? 'bg-success' : 'bg-error'
+                  <div className={`w-4 h-4 rounded-full ${
+                    equationState.isValid ? 'bg-green-500' : 'bg-red-500'
                   }`}></div>
-                  <span className={`text-xs font-medium ${
-                    equationState.isValid ? 'text-success' : 'text-error'
+                  <span className={`text-sm font-bold ${
+                    equationState.isValid ? 'text-green-700' : 'text-red-700'
                   }`}>
-                    {equationState.isValid ? 'Valid transformation' : 'Invalid transformation'}
+                    {equationState.isValid ? '✓ This transformation keeps the equation balanced' : '✗ This would unbalance the equation'}
                   </span>
                 </div>
               </div>
-              <div className="text-2xl math-equation text-gray-700 text-center">
-                <span className="inline-block bg-white px-3 py-2 rounded border border-dashed">
-                  {equationState.preview}
-                </span>
-              </div>
-              <div className="flex items-center justify-center space-x-3 mt-4">
+              
+              <div className="flex items-center justify-center space-x-4">
                 <Button
                   variant="outline"
                   onClick={onUndoStep}
-                  className="border-gray-300 hover:bg-gray-50"
+                  className="border-gray-400 hover:bg-gray-100 px-6 py-3"
+                  size="lg"
                 >
                   <i className="fas fa-times text-sm mr-2"></i>
-                  Cancel Preview
+                  Cancel
                 </Button>
                 <Button
                   onClick={onApplyTransformation}
-                  className="bg-success hover:bg-success/90 text-white px-6"
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 text-lg font-bold shadow-lg"
                   disabled={!equationState.isValid}
+                  size="lg"
                 >
                   <i className="fas fa-check text-sm mr-2"></i>
-                  Commit This Step
+                  COMMIT THIS STEP
                 </Button>
               </div>
+              
               {!equationState.isValid && (
-                <div className="mt-3 p-3 bg-error/10 rounded border border-error/20">
-                  <p className="text-sm text-error">
+                <div className="mt-4 p-4 bg-red-50 rounded border border-red-200">
+                  <p className="text-sm text-red-700 text-center">
                     <i className="fas fa-exclamation-triangle text-sm mr-2"></i>
-                    This transformation would make the equation unbalanced. Try a different operation or value.
+                    This transformation would break the equation balance. Try a different operation or value.
                   </p>
                 </div>
               )}

@@ -77,11 +77,14 @@ export default function MathWorkspace() {
   const hints: MathHint[] = currentProblem?.hints || [];
 
   const handleOperationSelect = (operation: string, operand?: string) => {
+    console.log('Operation selected:', operation, 'operand:', operand);
     const mathOperation = MathEngine.OPERATIONS.find(op => op.type === operation);
     if (!mathOperation) return;
 
     const preview = MathEngine.generatePreview(equationState.current, mathOperation, operand);
     const isValid = MathEngine.validateOperation(equationState.current, mathOperation, operand);
+    
+    console.log('Preview generated:', preview, 'isValid:', isValid);
 
     setEquationState(prev => ({
       ...prev,
@@ -89,6 +92,7 @@ export default function MathWorkspace() {
       isValid
     }));
     setPreviewMode(true);
+    console.log('Preview mode set to true');
   };
 
   const handleApplyTransformation = () => {
