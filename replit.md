@@ -128,3 +128,9 @@ Core mathematical operations and validation logic:
 - **Logging**: Structured request/response logging for API endpoints
 
 The application prioritizes educational effectiveness through interactive learning, real-time feedback, and progressive difficulty. The architecture supports scalability while maintaining simplicity for educational content delivery.
+## Android App (APK)
+
+The app can be packaged as an Android APK with Capacitor. In the mobile build (`VITE_STANDALONE=true`) there is no Express server: `client/src/lib/local-api.ts` answers `/api` requests on the device using the same in-memory storage as the server.
+
+- **Automatic build**: every push runs the "Build Android APK" GitHub Actions workflow; download `math-learning-apk` from the run's Artifacts section.
+- **Local build** (needs Android SDK + Java 21): `npm run build:mobile`, then `cd android && ./gradlew assembleDebug`. The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.

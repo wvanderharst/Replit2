@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Math Learning</string>
+    <string name="title_activity_main">Math Learning</string>
+    <string name="package_name">com.mathlearning.app</string>
+    <string name="custom_url_scheme">com.mathlearning.app</string>
+</resources>

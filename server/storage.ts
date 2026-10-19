@@ -1,5 +1,6 @@
 import { type User, type InsertUser, type MathSession, type InsertMathSession, type MathProblem, type InsertMathProblem } from "@shared/schema";
-import { randomUUID } from "crypto";
+// Web Crypto works in both Node and the browser, so this storage can also run inside the mobile app
+const randomUUID = () => globalThis.crypto.randomUUID();
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
